@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Docs{% endblock %}
+
+{% block content %}
+<div class="ptitle">Documentation</div>
+<div class="psub">// DevNest 내부 문서</div>
+
+<div class="card">
+  <h2>SSRF 방어 정책 v2.0</h2>
+  <p>Import 기능에서 차단되는 주소 목록:</p>
+  <div class="result-box">
+    <div class="result-bd">차단 목록:
+  - 127.0.0.1          (루프백 IPv4)
+  - localhost           (루프백 도메인)
+  - 0.0.0.0            (와일드카드)
+  - ::ffff:             (IPv6 mapped IPv4)
+  - 169.254.169.254    (클라우드 메타데이터)
+
+내부 서비스 현황:
+  - :5000  DevNest 메인 앱 + Admin API (통합)
+
+Admin API 엔드포인트 (내부 전용 — JWT 검증 없음):
+  GET /api/admin/info
+  GET /api/admin/change_password?new_password={pw}
+
+※ Admin API는 루프백(127.0.0.1)에서 온 요청만 신뢰</div>
+  </div>
+</div>
+{% endblock %}

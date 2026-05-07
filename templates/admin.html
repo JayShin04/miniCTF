@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+
+{% block content %}
+<div class="ptitle">Admin Dashboard</div>
+<div class="psub">// 어드민 전용 패널</div>
+
+<div class="flag-section fi">
+  <div class="flag-label">🚩 Secret Flag</div>
+  <a class="flag-link" href="{{ url_for('admin_flag') }}">/admin/flag →</a>
+</div>
+
+<div class="card">
+  <h2>⚙ System Status</h2>
+  <p>
+    Internal API &nbsp;<span class="ok">● :9000 Running</span><br>
+    Main App &nbsp;&nbsp;&nbsp;<span class="ok">● :5000 Running</span><br>
+    Logged in as &nbsp;<strong style="color:var(--blue)">{{ username }}</strong>
+  </p>
+</div>
+{% endblock %}

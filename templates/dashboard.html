@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="ptitle">Dashboard</div>
+<div class="psub">// welcome, {{ username }} · role: {{ role }}</div>
+
+<div class="alert alert-warn">
+  ⚠ <strong>보안 공지 (2025-11-10):</strong>
+  Import 기능 SSRF 방어 업데이트 —
+  127.0.0.1 / localhost / 0.0.0.0 / IPv6(::ffff:) 접근 차단 적용 완료.
+</div>
+
+<div class="card">
+  <h2>📁 Projects (4)</h2>
+  <p>backend-api · frontend-portal · infra-scripts · ml-pipeline</p>
+</div>
+
+<div class="card">
+  <h2>🔑 계정 관리</h2>
+  <p>
+    비밀번호 변경 → <a href="{{ url_for('change_password') }}">Change PW</a><br>
+    내부 문서 &amp; API 정보 → <a href="{{ url_for('docs') }}">Docs</a>
+  </p>
+</div>
+{% endblock %}

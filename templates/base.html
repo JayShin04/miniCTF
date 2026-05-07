@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}DevNest{% endblock %} · DevNest</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <span class="logo">Dev<span>Nest</span></span>
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--muted);">
+    v2.0 · Repository Manager
+  </div>
+  <div class="nav-r">
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('fetch_save') }}">Fetch &amp; Save</a>
+    <a href="{{ url_for('change_password') }}">Change PW</a>
+    {% if role == 'admin' %}
+      <a href="{{ url_for('admin') }}">Admin</a>
+    {% endif %}
+    <span class="nav-user">{{ username }}</span>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+</nav>
+
+<!-- ── Layout ── -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="s-sec">Navigate</div>
+    <a class="s-item {% if page == 'dash' %}on{% endif %}"
+       href="{{ url_for('dashboard') }}">◈ Dashboard</a>
+    <a class="s-item {% if page == 'fetch' %}on{% endif %}"
+       href="{{ url_for('fetch_save') }}">⬇ Fetch &amp; Save</a>
+    <a class="s-item {% if page == 'pw' %}on{% endif %}"
+       href="{{ url_for('change_password') }}">🔑 Change PW</a>
+    {% if role == 'admin' %}
+      <a class="s-item {% if page == 'admin' %}on{% endif %}"
+         href="{{ url_for('admin') }}">⚡ Admin</a>
+    {% endif %}
+    <div class="s-sec">Info</div>
+    <a class="s-item {% if page == 'docs' %}on{% endif %}"
+       href="{{ url_for('docs') }}">📄 Docs</a>
+  </aside>
+
+  <!-- Main content -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+</body>
+</html>

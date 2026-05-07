@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Login · DevNest</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-box fi">
+    <div class="login-title">DevNest</div>
+    <div class="login-sub">// internal repository manager · sign in</div>
+
+    {% if error %}
+      <div class="alert alert-err">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <label>Username</label>
+      <input type="text" name="username" placeholder="guest" autofocus/>
+      <label>Password</label>
+      <input type="password" name="password" placeholder="••••••••"/>
+      <button class="btn" type="submit" style="width:100%;">Sign In</button>
+    </form>
+
+    <div class="login-hint">guest / guest1234 로 시작하세요.</div>
+  </div>
+</div>
+</body>
+</html>

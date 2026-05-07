@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Fetch & Save{% endblock %}
+
+{% block content %}
+<div class="ptitle">Fetch & Save</div>
+<div class="psub">// URL을 입력하면 서버가 직접 크롤링해 코드 스니펫으로 저장합니다</div>
+
+<div class="alert alert-info">
+  ℹ <strong>어떻게 동작하나요?</strong><br>
+  Raw 코드 URL을 입력하면 <strong>서버가 직접 해당 URL에 요청</strong>을 보내
+  내용을 가져옵니다. GitHub Raw, Pastebin, Gist 등 텍스트/코드 URL을 지원합니다.<br>
+  <span style="color:var(--muted);">예시: <code>https://raw.githubusercontent.com/user/repo/main/app.py</code></span>
+</div>
+
+<div class="card">
+  <h2>⬇ New Fetch</h2>
+  <p>저장할 코드의 URL을 입력하세요.</p>
+  <form method="POST" action="{{ url_for('fetch_save') }}">
+    <label>Source URL</label>
+    <input type="text" name="source_url"
+           placeholder="https://raw.githubusercontent.com/user/repo/main/app.py"
+           value="{{ fetched_url }}"/>
+    <label>Snippet Name <span style="color:var(--muted);font-weight:400;">(선택)</span></label>
+    <input type="text" name="snippet_name"
+           placeholder="자동 감지됩니다"
+           value="{{ snippet_name }}"/>
+    <button class="btn" type="submit">Fetch & Save</button>
+  </form>
+
+  {% if result is not none %}
+    {% if is_err %}
+    <div class="result-box fi" style="margin-top:1rem;">
+      <div class="result-hd"><span class="err">●</span> 오류 발생</div>
+      <div class="result-bd err">{{ result }}</div>
+    </div>
+    {% else %}
+    <div class="result-box fi" style="margin-top:1rem;border-color:var(--accent);">
+      <div class="result-hd">
+        <span class="ok">●</span> 크롤링 성공 — 스니펫 저장됨
+        <span style="margin-left:auto;color:var(--muted);">{{ result | length }} bytes</span>
+      </div>
+    </div>
+    {% endif %}
+  {% endif %}
+</div>
+
+<!-- 저장된 스니펫 목록 -->
+{% if snippets %}
+<div style="margin-top:.5rem;">
+  <div class="psub" style="margin-bottom:.8rem;">
+    저장된 스니펫 — {{ snippets | length }}개
+  </div>
+
+  {% for s in snippets %}
+  <div class="card fi" style="margin-bottom:.8rem;">
+    <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.6rem;">
+
+      <!-- 언어 아이콘 -->
+      <span style="font-size:1.2rem;">
+        {% if s.lang == 'Python' %}🐍
+        {% elif s.lang == 'JavaScript' %}🟨
+        {% elif s.lang == 'TypeScript' %}🔷
+        {% elif s.lang == 'Shell' %}🖥
+        {% elif s.lang == 'JSON' %}📋
+        {% elif s.lang == 'HTML' %}🌐
+        {% elif s.lang == 'CSS' %}🎨
+        {% else %}📄{% endif %}
+      </span>
+
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;
+                    color:var(--blue);font-size:.88rem;">{{ s.name }}</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.15rem;
+                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          {{ s.url[:65] }}
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;">
+        <span style="font-size:.7rem;padding:2px 7px;border:1px solid var(--border);
+                     border-radius:4px;color:var(--muted);font-family:'IBM Plex Mono',monospace;">
+          {{ s.lang }}
+        </span>
+        <span style="font-size:.7rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">
+          {{ s.size }}
+        </span>
+      </div>
+    </div>
+
+    <!-- 코드 미리보기 토글 -->
+    <div>
+      <button onclick="toggleSnippet('s{{ loop.index }}')"
+              style="background:none;border:1px solid var(--border);border-radius:4px;
+                     color:var(--muted);font-size:.72rem;padding:3px 10px;cursor:pointer;
+                     font-family:'IBM Plex Mono',monospace;transition:all .15s;"
+              onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--text)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+        ▼ 미리보기
+      </button>
+    </div>
+    <div id="s{{ loop.index }}" style="display:none;margin-top:.6rem;">
+      <div class="result-box">
+        <div class="result-hd">
+          <span class="ok">●</span> {{ s.name }}
+          <span style="margin-left:auto;">{{ s.size }}</span>
+        </div>
+        <div class="result-bd">{{ s.content[:2000] }}{% if s.content|length > 2000 %}
+...
+({{ s.content|length }} bytes, 처음 2000자만 표시){% endif %}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="card" style="border-style:dashed;text-align:center;color:var(--muted);padding:2rem;">
+    아직 저장된 스니펫이 없습니다.<br>
+    <span style="font-size:.8rem;">위에서 URL을 입력해 첫 번째 스니펫을 저장해보세요.</span>
+  </div>
+{% endif %}
+
+<script>
+function toggleSnippet(id) {
+  const box = document.getElementById(id);
+  const btn = box.previousElementSibling.querySelector('button');
+  if (box.style.display === 'none') {
+    box.style.display = 'block';
+    btn.textContent = '▲ 접기';
+  } else {
+    box.style.display = 'none';
+    btn.textContent = '▼ 미리보기';
+  }
+}
+</script>
+{% endblock %}

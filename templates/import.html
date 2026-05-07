@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Import{% endblock %}
+
+{% block content %}
+<div class="ptitle">Import Repository</div>
+<div class="psub">// 외부 Git 저장소 URL을 입력하면 서버가 직접 접근해 프로젝트를 등록합니다</div>
+
+<div class="alert alert-info">
+  ℹ <strong>어떻게 동작하나요?</strong><br>
+  입력한 URL로 <strong>서버가 직접 HTTP 요청</strong>을 보내 저장소 정보를 수집합니다.
+  GitHub, GitLab 등 공개 저장소 URL을 입력해보세요.<br>
+  보안 정책: <code>127.0.0.1</code> / <code>localhost</code> /
+  <code>0.0.0.0</code> / <code>::ffff:</code> 접근 차단
+</div>
+
+<div class="card">
+  <h2>⊕ New Import</h2>
+  <p>저장소 URL을 입력하세요. 서버가 해당 URL에 접근해 메타데이터를 가져옵니다.</p>
+  <form method="POST" action="{{ url_for('import_project') }}">
+    <label>Repository URL</label>
+    <input type="text" name="repo_url"
+           placeholder="https://github.com/user/repo"
+           value="{{ fetched_url }}"/>
+    <button class="btn" type="submit">Import</button>
+  </form>
+</div>
+
+{% if result is not none %}
+
+  {% if not is_err and repo_title %}
+  <!-- 성공: 저장소 카드 표시 -->
+  <div class="card fi" style="border-color:var(--accent);">
+    <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem;">
+      <span style="font-size:1.4rem;">📦</span>
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;
+                    color:var(--blue);font-size:.95rem;">{{ repo_title }}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem;">
+          {{ fetched_url[:60] }}
+        </div>
+      </div>
+      <span style="margin-left:auto;font-size:.72rem;padding:3px 8px;
+                   border:1px solid var(--accent);border-radius:4px;
+                   color:var(--accent);font-family:'IBM Plex Mono',monospace;">
+        ✓ imported
+      </span>
+    </div>
+    <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">
+      <span style="color:var(--muted);">Status</span> &nbsp;
+      <span class="ok">200 OK</span> &nbsp;·&nbsp;
+      <span style="color:var(--muted);">Size</span> &nbsp;
+      <span style="color:var(--text);">{{ result | length }} bytes</span>
+    </div>
+  </div>
+
+  <!-- Raw 응답 토글 -->
+  <div class="card" style="max-width:660px;">
+    <h2 style="cursor:pointer;" onclick="toggleRaw()">
+      📄 Raw 응답 보기
+      <span id="toggle-icon" style="font-size:.8rem;color:var(--muted);">▼ 펼치기</span>
+    </h2>
+    <div id="raw-box" style="display:none;margin-top:.8rem;">
+      <div class="result-box">
+        <div class="result-hd">
+          <span class="ok">●</span> 서버 응답 원본
+          <span style="margin-left:auto;color:var(--muted);">{{ fetched_url[:50] }}</span>
+        </div>
+        <div class="result-bd">{{ result }}</div>
+      </div>
+    </div>
+  </div>
+
+  {% elif is_err %}
+  <!-- 실패: 차단 or 오류 -->
+  <div class="card fi" style="border-color:var(--red);">
+    <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.6rem;">
+      <span style="font-size:1.3rem;">⛔</span>
+      <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;
+                  color:var(--red);font-size:.9rem;">Import 실패</div>
+    </div>
+    <div class="result-box">
+      <div class="result-hd"><span class="err">●</span> ERROR</div>
+      <div class="result-bd err">{{ result }}</div>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- title 없는 성공 (API 응답 등) -->
+  <div class="card fi" style="border-color:var(--accent);">
+    <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem;">
+      <span style="font-size:1.3rem;">📄</span>
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;
+                    color:var(--blue);font-size:.9rem;">응답 수신 완료</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem;">
+          {{ fetched_url[:60] }}
+        </div>
+      </div>
+      <span style="margin-left:auto;font-size:.72rem;padding:3px 8px;
+                   border:1px solid var(--accent);border-radius:4px;
+                   color:var(--accent);font-family:'IBM Plex Mono',monospace;">
+        200 OK
+      </span>
+    </div>
+    <div class="result-box">
+      <div class="result-hd">
+        <span class="ok">●</span> 서버 응답
+        <span style="margin-left:auto;color:var(--muted);">{{ result | length }} bytes</span>
+      </div>
+      <div class="result-bd">{{ result }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+{% endif %}
+
+<script>
+function toggleRaw() {
+  const box  = document.getElementById('raw-box');
+  const icon = document.getElementById('toggle-icon');
+  if (box.style.display === 'none') {
+    box.style.display = 'block';
+    icon.textContent = '▲ 접기';
+  } else {
+    box.style.display = 'none';
+    icon.textContent = '▼ 펼치기';
+  }
+}
+</script>
+{% endblock %}
