@@ -16,7 +16,7 @@ FLAG       = os.environ.get("FLAG")
 
 # 메모리 기반 유저 저장소
 USERS = {
-    "admin": os.environ.get("ADMIN_PASSWORD"),
+    "admin": os.environ.get("ADMIN_PW"),
     "guest": "guest1234",
 }
 
