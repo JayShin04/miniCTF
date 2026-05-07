@@ -6,20 +6,17 @@ import os
 import re
 from urllib.parse import urlparse
 from flask import send_from_directory
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
-# ---------------------------------------------------------------
-# DevNest v2.0 - CTF 교육용 의도적 취약 애플리케이션
-# 취약점: SSRF (userinfo@host + 인코딩 IP 우회) + 내부 API 무인증
-# ---------------------------------------------------------------
-
+load_dotenv()
 JWT_SECRET = os.environ.get("JWT_SECRET")
 FLAG       = os.environ.get("FLAG")
 
 # 메모리 기반 유저 저장소
 USERS = {
-    "admin": "superSecretAdminPass!",
+    "admin": os.environ.get("ADMIN_PASSWORD"),
     "guest": "guest1234",
 }
 
@@ -76,12 +73,6 @@ def detect_name(url: str, fallback: str) -> str:
 
 
 def is_ssrf_safe(url: str) -> tuple[bool, str]:
-    """
-    취약한 SSRF 방어 — 문자열 블랙리스트만 체크
-    userinfo@host + 인코딩 IP 조합으로 우회 가능
-      예) http://foo@0x7f000001:5000/...
-          http://foo@2130706433:5000/...
-    """
     url_lower = url.lower()
     for bad in BLACKLIST:
         if bad in url_lower:
