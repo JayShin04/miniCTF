@@ -5,6 +5,7 @@ import datetime
 import os
 import re
 from urllib.parse import urlparse
+from flask import send_from_directory
 
 app = Flask(__name__)
 
@@ -13,8 +14,8 @@ app = Flask(__name__)
 # 취약점: SSRF (userinfo@host + 인코딩 IP 우회) + 내부 API 무인증
 # ---------------------------------------------------------------
 
-JWT_SECRET = "devnest-jwt-secret-2025"
-FLAG       = "MJSEC{SSRF_u53r1nf0_@_byp4ss_ch4ng3_pw_succ3ss}"
+JWT_SECRET = os.environ.get("JWT_SECRET")
+FLAG       = os.environ.get("FLAG")
 
 # 메모리 기반 유저 저장소
 USERS = {
@@ -52,6 +53,12 @@ def detect_lang(url: str, content: str) -> str:
     if stripped.startswith("{") or stripped.startswith("["):
         return "JSON"
     return "Text"
+
+from flask import send_from_directory
+
+@app.route("/robots.txt")
+def robots():
+    return send_from_directory(app.root_path, "robots.txt")
 
 
 def format_size(n: int) -> str:
