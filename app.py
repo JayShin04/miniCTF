@@ -3,8 +3,8 @@ import requests
 import jwt
 import datetime
 import os
-from urllib.parse import urlparse
 import re
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 
@@ -16,13 +16,13 @@ app = Flask(__name__)
 JWT_SECRET = "devnest-jwt-secret-2025"
 FLAG       = "MJSEC{SSRF_u53r1nf0_@_byp4ss_ch4ng3_pw_succ3ss}"
 
-# 메모리 기반 유저 저장소 (서버 재시작 시 초기화)
+# 메모리 기반 유저 저장소
 USERS = {
     "admin": "superSecretAdminPass!",
     "guest": "guest1234",
 }
 
-# 세션 내 스니펫 저장소 (메모리 기반)
+# 세션 내 스니펫 저장소
 SNIPPETS = []
 
 BLACKLIST = [
@@ -37,30 +37,17 @@ BLACKLIST = [
 # ── 헬퍼 ────────────────────────────────────────────────────────
 
 def detect_lang(url: str, content: str) -> str:
-    """URL 확장자 기반 언어 감지."""
     ext_map = {
-        ".py":   "Python",
-        ".js":   "JavaScript",
-        ".ts":   "TypeScript",
-        ".sh":   "Shell",
-        ".json": "JSON",
-        ".html": "HTML",
-        ".css":  "CSS",
-        ".java": "Java",
-        ".go":   "Go",
-        ".rs":   "Rust",
-        ".c":    "C",
-        ".cpp":  "C++",
-        ".md":   "Markdown",
-        ".yml":  "YAML",
-        ".yaml": "YAML",
+        ".py": "Python", ".js": "JavaScript", ".ts": "TypeScript",
+        ".sh": "Shell",  ".json": "JSON",      ".html": "HTML",
+        ".css": "CSS",   ".java": "Java",       ".go": "Go",
+        ".rs": "Rust",   ".c": "C",             ".cpp": "C++",
+        ".md": "Markdown", ".yml": "YAML",      ".yaml": "YAML",
     }
-    from urllib.parse import urlparse
     path = urlparse(url).path.lower()
     for ext, lang in ext_map.items():
         if path.endswith(ext):
             return lang
-    # JSON 내용 감지
     stripped = content.strip()
     if stripped.startswith("{") or stripped.startswith("["):
         return "JSON"
@@ -74,10 +61,8 @@ def format_size(n: int) -> str:
 
 
 def detect_name(url: str, fallback: str) -> str:
-    """URL에서 파일명 추출."""
     if fallback.strip():
         return fallback.strip()
-    from urllib.parse import urlparse
     path = urlparse(url).path
     name = path.rstrip("/").split("/")[-1]
     return name if name else url[:30]
@@ -145,9 +130,6 @@ def tmpl_ctx(payload: dict, page: str) -> dict:
 
 
 # ── 내부 Admin API ───────────────────────────────────────────────
-# 같은 프로세스 안에 있어서 USERS 딕셔너리를 직접 수정 가능
-# remote_addr 체크로 루프백(127.0.0.1)에서 온 요청만 허용
-# → 외부에서 직접 접근 불가, SSRF를 통해서만 도달 가능
 
 @app.route("/api/admin/info")
 def api_admin_info():
@@ -166,7 +148,6 @@ def api_admin_info():
 
 @app.route("/api/admin/change_password")
 def api_change_password():
-    # 루프백에서 온 요청만 허용 (SSRF로만 접근 가능)
     if request.remote_addr not in ("127.0.0.1", "::1"):
         return jsonify({"status": "error", "message": "내부 전용 API입니다."}), 403
 
@@ -178,9 +159,7 @@ def api_change_password():
             "example": "/api/admin/change_password?new_password=newpass123"
         }), 400
 
-    # USERS 딕셔너리 직접 수정 → 즉시 로그인에 반영
     USERS["admin"] = new_pw
-
     return jsonify({
         "status":  "success",
         "message": "admin 비밀번호가 변경되었습니다.",
@@ -239,52 +218,61 @@ def change_password(payload):
     )
 
 
-@app.route("/import", methods=["GET", "POST"])
+@app.route("/fetch", methods=["GET", "POST"])
 @login_required
-def import_project(payload):
-    result      = None
-    is_err      = False
-    fetched_url = ""
+def fetch_save(payload):
+    result       = None
+    is_err       = False
+    fetched_url  = ""
+    snippet_name = ""
 
     if request.method == "POST":
-        repo_url    = request.form.get("repo_url", "").strip()
-        fetched_url = repo_url
+        source_url   = request.form.get("source_url", "").strip()
+        snippet_name = request.form.get("snippet_name", "").strip()
+        fetched_url  = source_url
 
-        if not repo_url:
-            result = "저장소 URL을 입력해주세요."
+        if not source_url:
+            result = "URL을 입력해주세요."
             is_err = True
         else:
-            safe, reason = is_ssrf_safe(repo_url)
+            safe, reason = is_ssrf_safe(source_url)
             if not safe:
                 result = f"[보안 차단] {reason}"
                 is_err = True
             else:
                 try:
                     resp = requests.get(
-                        repo_url,
+                        source_url,
                         timeout=5,
                         allow_redirects=False,
-                        headers={"User-Agent": "DevNest-Importer/2.0"},
+                        headers={"User-Agent": "DevNest-Fetcher/2.0"},
                     )
-                    result = resp.text[:4000]
+                    result = resp.text[:8000]
+                    is_err = False
+
+                    # 스니펫 저장
+                    name = detect_name(source_url, snippet_name)
+                    lang = detect_lang(source_url, result)
+                    SNIPPETS.insert(0, {
+                        "name":    name,
+                        "url":     source_url,
+                        "lang":    lang,
+                        "size":    format_size(len(result.encode())),
+                        "content": result,
+                    })
+
                 except Exception as e:
                     result = f"요청 실패: {str(e)}"
                     is_err = True
 
-    # <title> 태그 추출 → 저장소명으로 표시
-    repo_title = ""
-    if result and not is_err:
-        match = re.search(r"<title[^>]*>(.*?)</title>", result, re.IGNORECASE | re.DOTALL)
-        if match:
-            repo_title = match.group(1).strip()[:80]
-
     return render_template(
-        "import.html",
-        **tmpl_ctx(payload, "import"),
+        "fetch.html",
+        **tmpl_ctx(payload, "fetch"),
         result=result,
         is_err=is_err,
         fetched_url=fetched_url,
-        repo_title=repo_title,
+        snippet_name=snippet_name,
+        snippets=SNIPPETS,
     )
 
 
